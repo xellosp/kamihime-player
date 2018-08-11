@@ -6,53 +6,48 @@ __pycache__/
 # Renpy byte-compiled
 *.rpyc
 
-# Python lib
-python-packages/
-
 # cmd files
 *.cmd
 
 # Logs
 *.log
 
-# Images
-*.jpg
-*.jpeg
-*.png
-
 # Asset folders
-backgrounds/
-bgm/
-cache/
-gui/
-saves/
-dmm/assets/
-dmm/info_eidolon/
-dmm/info_kamihime/
-dmm/info_soul/
-dmm/main_quests/
-dmm/portrait/
-dmm/portrait_full/
-dmm/raw_scenario/
-dmm/scenario/
-dmm/story_thumb/
-nutaku/assets/
-nutaku/info_eidolon/
-nutaku/info_kamihime/
-nutaku/info_soul/
-nutaku/main_quests/
-nutaku/portrait/
-nutaku/portrait_full/
-nutaku/raw_scenario/
-nutaku/scenario/
-nutaku/story_thumb/
+game/backgrounds/
+game/bgm/
+game/cache/
+game/saves/
+game/dmm/assets/
+game/dmm/info_eidolon/
+game/dmm/info_kamihime/
+game/dmm/info_soul/
+game/dmm/main_quests/
+game/dmm/portrait/
+game/dmm/portrait_full/
+game/dmm/raw_scenario/
+game/dmm/scenario/
+game/dmm/story_thumb/
+game/nutaku/assets/
+game/nutaku/info_eidolon/
+game/nutaku/info_kamihime/
+game/nutaku/info_soul/
+game/nutaku/main_quests/
+game/nutaku/portrait/
+game/nutaku/portrait_full/
+game/nutaku/raw_scenario/
+game/nutaku/scenario/
+game/nutaku/story_thumb/
 
 # Others
-.vscode/
-dmm/config.ini
-dmm/listing*
-nutaku/blacklist.txt
-nutaku/censored.txt
-nutaku/eidolons.json
-nutaku/config.ini
-nutaku/listing*
+lib/
+Python27/
+renpy/
+Kamihime_Player.*
+game/.vscode/
+game/dmm/config.ini
+game/dmm/listing*
+game/nutaku/blacklist.txt
+game/nutaku/censored.txt
+game/nutaku/eidolons.json
+game/nutaku/config.ini
+game/nutaku/listing*

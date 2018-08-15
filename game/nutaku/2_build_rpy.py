@@ -44,9 +44,13 @@ def player_name_unification(line):
     line = line.replace('Kandaru', player_name)
     line = line.replace('Xellosp', player_name)
     line = line.replace('Cloudofdarkhole6', player_name)
+    line = line.replace(u'{{主人公}}', player_name)
     return line
   
-player_name = 'Master'
+# player_name = 'Master'
+
+print "Player's name: ",
+player_name = raw_input().decode(sys.stdin.encoding).strip()
 
 data_directory = 'raw_scenario'
 dst_folder = 'scenario'

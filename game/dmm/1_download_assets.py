@@ -16,11 +16,6 @@ logging.basicConfig(
     format='[%(levelname)s] %(asctime)s: %(message)s'
 )
 
-codes = dict(nutaku={}, dmm={})
-codes['dmm']['kamihime'] = dict(intro='', scene='', get='94/76/')
-codes['dmm']['eidolon'] = dict(intro='', scene='', get='db/8d/')
-codes['dmm']['soul'] = dict(intro='', scene='', get='eb/0a/')
-
 base_url = dict()
 
 base_url['fgimage'] = 'https://static-r.kamihimeproject.net/scenarios/fgimage/'

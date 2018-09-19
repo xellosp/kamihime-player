@@ -4,6 +4,7 @@ import re
 import os
 import io
 import urllib
+import traceback
 import ConfigParser
 import numpy as np
 import logging
@@ -65,17 +66,22 @@ for section in config.sections():
         img_url = selector.xpath(
             '//h3[contains(text(), portrait_text)]/following-sibling::table[1]/tr[1]/td[last()]/p[1]//img[1]/@src').extract_first()
 
-    log_console('url: %s' % img_url)
-    r = s.get(img_url)
+    try:
+        log_console('url: %s' % img_url)
+        r = s.get(img_url)
 
-    if r.status_code <> requests.codes.ok:
-        log_console('Error downloading image: %d' % r.status_code)
-        logging.error('Error downloading image: %d' % r.status_code)
+        if r.status_code <> requests.codes.ok:
+            log_console('Error downloading image: %d' % r.status_code)
+            logging.error('Error downloading image: %d' % r.status_code)
 
-    im = Image.open(io.BytesIO(r.content))
-    im = im.convert('RGBA')
-    data = np.array(im)
-    r, g, b, a = data.T
-    a[a == a[0][0]] = 0
-    img = Image.fromarray(data)
-    img.save(os.path.join(img_folder, '%s.png' % char_name))
+        im = Image.open(io.BytesIO(r.content))
+        im = im.convert('RGBA')
+        data = np.array(im)
+        r, g, b, a = data.T
+        a[a == a[0][0]] = 0
+        img = Image.fromarray(data)
+        img.save(os.path.join(img_folder, '%s.png' % char_name))
+    except:
+        log_console('Error downloading image')
+        logging.error('Downloading %s: (%s)' % (char_name, img_url))
+        logging.error(traceback.format_exc())

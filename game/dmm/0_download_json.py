@@ -55,7 +55,7 @@ def download_info(link, info_folder):
 kh_list = set(os.listdir(kh_info_folder))
 print 'Download kamihime info...'
 for x in (0, 5, 6, 7):
-    for y in xrange(99):
+    for y in xrange(200):
         id = str(x*1000 + y + 1)
         if (id + '.json') not in kh_list:
             url = 'https://r.kamihimeproject.net/v1/characters/%s' % id

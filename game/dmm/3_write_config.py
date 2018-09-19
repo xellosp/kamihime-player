@@ -34,6 +34,11 @@ data_folder = 'raw_scenario'
 # config_file = 'dmm/config.ini'
 # data_folder = 'dmm/raw_scenario'
 
+def log_console(text):
+    try:
+        print text
+    except:
+        None
 
 def get_character_info(entry, scenario, type):
     script_file = os.path.join(data_folder, type, entry, scenario.replace('.json', '') + '_script.json')
@@ -211,7 +216,7 @@ for story_type in info:
     for index in info[story_type]:
         chara_info = info[story_type][index]
         section_name = chara_info['name'].replace('[', '(').replace(']', ')')
-        print section_name
+        log_console(section_name)
 
         if not parser.has_section(section_name):
             parser.add_section(section_name)

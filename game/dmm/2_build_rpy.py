@@ -110,50 +110,50 @@ def parse_scenario(data, script, rd):
     chara_info = {}
     chara_name = ''
     for line in data.split('\n'):
-        if line.startswith('[chara_new'):
-            name, jname = re.findall(r'name="(.*?)" .* jname="(.*?)"', line)[0]
-            chara_info[name] = {}
-            chara_info[name]['jname'] = jname
-            chara_info[name]['face'] = {}
-        elif line.startswith('[chara_face'):
-            name, face, storage = re.findall(
-                r'name="(.*?)" face="(.*?)" storage="(.*?)"', line)[0]
-            chara_info[name]['face'][face] = storage
-        elif line.startswith('[playbgm'):
-            bgm = re.findall(r'storage="(.*?)"', line)[0]
-            script.append(cmd('play music "dmm/%s/%s"' % (asset_folder, bgm)))
-        elif line.startswith('[bg'):
-            bg = re.findall(r'storage="(.*?)"', line)[0]
-            script.append(cmd('show expression ' + '(Frame("dmm/%s/%s"))' %
-                              (asset_folder, bg) + ' as bg behind char with dissolve'))
-        elif line.startswith('[chara_show'):
-            chara_name = chara_info[re.findall(
-                r'name="(.*?)"', line)[0]]['jname']
-        elif line.startswith('[chara_mod'):
-            name, face = re.findall(r'name="(.*?)" face="(.*?)"', line)[0]
-            sprite = chara_info[name]['face'][face]
-            script.append(cmd('show expression ' + '(im.Scale("dmm/%s/%s",config.screen_height,config.screen_height))' %
-                              (asset_folder, sprite) + ' as char with dissolve'))
-        elif line.startswith('[playse'):
-            try:
+        try:
+            if line.startswith('[chara_new'):
+                name, jname = re.findall(r'name="(.*?)" .* jname="(.*?)"', line)[0]
+                chara_info[name] = {}
+                chara_info[name]['jname'] = jname
+                chara_info[name]['face'] = {}
+            elif line.startswith('[chara_face'):
+                name, face, storage = re.findall(
+                    r'name="(.*?)" face="(.*?)" storage="(.*?)"', line)[0]
+                chara_info[name]['face'][face] = storage
+            elif line.startswith('[playbgm'):
+                bgm = re.findall(r'storage="(.*?)"', line)[0]
+                script.append(cmd('play music "dmm/%s/%s"' % (asset_folder, bgm)))
+            elif line.startswith('[bg'):
+                bg = re.findall(r'storage="(.*?)"', line)[0]
+                script.append(cmd('show expression ' + '(Frame("dmm/%s/%s"))' %
+                                (asset_folder, bg) + ' as bg behind char with dissolve'))
+            elif line.startswith('[chara_show'):
+                chara_name = chara_info[re.findall(
+                    r'name="(.*?)"', line)[0]]['jname']
+            elif line.startswith('[chara_mod'):
+                name, face = re.findall(r'name="(.*?)" face="(.*?)"', line)[0]
+                sprite = chara_info[name]['face'][face]
+                script.append(cmd('show expression ' + '(im.Scale("dmm/%s/%s",config.screen_height,config.screen_height))' %
+                                (asset_folder, sprite) + ' as char with dissolve'))
+            elif line.startswith('[playse'):
                 se = re.findall(r'storage="(.*?)"', line)[0]
                 if exists(rd, se):
                     script.append(cmd('voice ' + '"dmm/%s/%s/%s"' %
                                     (asset_folder, rd, se)))
-            except:
-                None
-        elif line.startswith('[chara_hide'):
-            script.append(cmd('hide char with dissolve'))
-            chara_name = ''
-        elif line.startswith('*') or line.startswith('#') or line.startswith('Tap to continue') or line.startswith('['):
-            continue
-        elif not line.startswith(';layer') and not line.startswith(u';画面'):
-            text = line.strip().replace('"', "'").replace('%', '\\%')
-            text = re.sub('\[.*?\]', '', text)
-            text = text.replace('%', '%%')
-            text = text.replace('\n', '').replace('\r', '')
-            text = player_name_unification(text)
-            script.append(cmd('"%s" "%s"' % (chara_name, text)))
+            elif line.startswith('[chara_hide'):
+                script.append(cmd('hide char with dissolve'))
+                chara_name = ''
+            elif line.startswith('*') or line.startswith('#') or line.startswith('Tap to continue') or line.startswith('['):
+                continue
+            elif not line.startswith(';layer') and not line.startswith(u';画面'):
+                text = line.strip().replace('"', "'").replace('%', '\\%')
+                text = re.sub('\[.*?\]', '', text)
+                text = text.replace('%', '%%')
+                text = text.replace('\n', '').replace('\r', '')
+                text = player_name_unification(text)
+                script.append(cmd('"%s" "%s"' % (chara_name, text)))
+        except:
+            logging.error(traceback.format_exc())
 
     script.append(cmd("hide char with dissolve"))
     script.append(cmd("hide cg with dissolve"))

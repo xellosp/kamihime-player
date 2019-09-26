@@ -7,7 +7,9 @@
 
 ## Basics ######################################################################
 
-define config.image_cache_size = 100
+define config.image_cache_size = 16
+
+define config.debug_image_cache = True
 
 ## A human-readable name of the game. This is used to set the default window
 ## title, and shows up in the interface and error reports.

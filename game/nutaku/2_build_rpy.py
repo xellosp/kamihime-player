@@ -39,11 +39,6 @@ def exists(rd, file):
 
 
 def player_name_unification(line):
-    line = line.replace('Eliont', player_name)
-    line = line.replace('Alexx', player_name)
-    line = line.replace('Kandaru', player_name)
-    line = line.replace('Xellosp', player_name)
-    line = line.replace('Cloudofdarkhole6', player_name)
     line = line.replace(u'{{主人公}}', player_name)
     return line
   
@@ -54,6 +49,12 @@ player_name = raw_input().decode(sys.stdin.encoding).strip()
 
 data_directory = 'raw_scenario'
 dst_folder = 'scenario'
+# data_directory = 'nutaku/raw_scenario'
+# dst_folder = 'nutaku/scenario'
+
+if not os.path.exists(dst_folder):
+    os.mkdir(dst_folder)
+
 character_types = os.listdir(data_directory)
 
 dmm_scenarios = []
@@ -89,7 +90,7 @@ for character_type in character_types:
 
             if data.has_key('scenario'):
                 # print data
-                data = data['scenario'].split('\n')
+                data = data['scenario'].replace('"][', '"]\n[').split('\n')
                 for command in data:
                     if command.startswith('*') or command.startswith('#') or command.startswith('Tap to continue'):
                         continue
@@ -105,7 +106,9 @@ for character_type in character_types:
                             if len(tmp) == 2:
                                 line[tmp[0]] = tmp[1]
 
-                        # if line['cmd'].startswith('')
+                        if filename == '5009_harem-character.json' and line.has_key('name') and line['name'] == 'sukunahikona':
+                            # Hot fix for [Masterpiece] Hermes 5009_harem-character.json
+                            line['name'] = 'herumesu2nd'
 
                         # print line
                         if line['cmd'].startswith('chara_new'):
@@ -128,7 +131,7 @@ for character_type in character_types:
                                                         ) + ' as bg behind char with dissolve'
                             script.append(cmd(c))
 
-                        if line['cmd'].startswith('chara_show'):
+                        if line['cmd'].startswith('chara_show'):                            
                             name = chara[line['name']]['name']
 
                         if line['cmd'].startswith('chara_mod'):
@@ -197,7 +200,7 @@ for character_type in character_types:
                         else:
                             script.append(cmd('voice sustain'))
 
-                        if not len(line['words']):
+                        if not line.has_key('words') or not len(line['words']):
                             line['chara'] = '   '
                             line['words'] = '{i}click to proceed'
 

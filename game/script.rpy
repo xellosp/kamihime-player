@@ -1,5 +1,11 @@
 define black = Solid((0,0,0,255))
 
+################################################################################
+## Game Persistent Variables
+################################################################################
+default persistent.bg_index = -1
+default persistent.bgm_index = -1
+
 init python:
     config.keymap['rollback'].remove('mousedown_4')
     config.keymap['game_menu'].remove('mouseup_3')
@@ -8,36 +14,40 @@ init python:
 
 screen main_menu:
     tag main_menu
-    add(Frame("backgrounds/%s"%(bg[bg_index])))
+    add(Frame("backgrounds/%s"%(bg[persistent.bg_index])))
 
     vbox xalign 0.5 yalign 0.7 spacing 20 xsize 250:
-        imagebutton auto "gui/button/nutaku-%s.png" action Return(['index', 'nutaku'])
-        imagebutton auto "gui/button/dmm-%s.png" action Return(['index', 'dmm'])
+        if nutaku_exist == True:
+            imagebutton auto "gui/button/nutaku-%s.png" action Return(['index', 'nutaku'])
+        if dmm_exist == True:
+            imagebutton auto "gui/button/dmm-%s.png" action Return(['index', 'dmm'])
         frame background "gui/button/background-idle.png" xsize 250 ysize 50:
             hbox xsize 250 ysize 50:
-                imagebutton auto "gui/button/left_arrow-%s.png" xalign 0.0 yalign 0.3 action SetVariable("bg_index", (bg_index + 1) % len(bg))
-                imagebutton auto "gui/button/right_arrow-%s.png" xalign 0.9 yalign 0.3 action SetVariable("bg_index", (bg_index - 1) % len(bg))
+                imagebutton auto "gui/button/left_arrow-%s.png" xalign 0.0 yalign 0.3 action SetField(persistent, "bg_index", (persistent.bg_index + 1) % len(bg))
+                imagebutton auto "gui/button/right_arrow-%s.png" xalign 0.9 yalign 0.3 action SetField(persistent, "bg_index", (persistent.bg_index - 1) % len(bg))
         frame background "gui/button/bgm-idle.png" xsize 250 ysize 50:
             hbox xsize 250 ysize 50:
-                imagebutton auto "gui/button/left_arrow-%s.png" action [mr.Next()] xalign 0.0 yalign 0.3
-                imagebutton auto "gui/button/right_arrow-%s.png" action [mr.Previous()] xalign 0.9 yalign 0.3
+                imagebutton auto "gui/button/left_arrow-%s.png" action [mr.Previous(), SetField(persistent, "bgm_index", (persistent.bgm_index - 1) % len(bgm))] xalign 0.0 yalign 0.3
+                imagebutton auto "gui/button/right_arrow-%s.png" action [mr.Next(), SetField(persistent, "bgm_index", (persistent.bgm_index + 1) % len(bgm))] xalign 0.9 yalign 0.3
         if (config.screen_width == 1280) and (config.screen_height == 720):
             imagebutton auto "gui/button/res_16_9-%s.png" action [SetField(config, "screen_width", 1080), SetField(config, "screen_height", 720), 
+            SetField(persistent, "default_width", 1080), SetField(persistent, "default_height", 720),
             SetVariable("x_ratio", 1080.0/1280.0), SetVariable("y_ratio", 1.0),
             Preference("display", (1280, 720)), Preference("display", "fullscreen") if _preferences.fullscreen == True else None]
         else:
             imagebutton auto "gui/button/res_3_2-%s.png" action [SetField(config, "screen_width", 1280), SetField(config, "screen_height", 720), 
+            SetField(persistent, "default_width", 1280), SetField(persistent, "default_height", 720),
             SetVariable("x_ratio", 1.0), SetVariable("y_ratio", 1.0),
             Preference("display", (1280, 720)), Preference("display", "fullscreen") if _preferences.fullscreen == True else None]
         imagebutton auto "gui/button/exit-%s.png" action Return('exit')
 
     if not renpy.music.is_playing():
-        on "show" action [mr.SetSingleTrack(True), mr.SetLoop(True), mr.Play()]
+        on "show" action [mr.SetSingleTrack(True), mr.SetLoop(True), mr.Play("bgm/%s"%bgm[persistent.bgm_index])]
 
 
 screen index:
     tag index
-    add(Frame("backgrounds/%s"%(bg[bg_index])))
+    add(Frame("backgrounds/%s"%(bg[persistent.bg_index])))
 
     vbox xfill True spacing 10:
         hbox xfill True:
@@ -150,12 +160,12 @@ screen index:
                                         textbutton ("{size=-6}{color=#eee}%s"%char_name) align(0.5,0.5) action Return(['info', char])
 
     if not renpy.music.is_playing():
-        on "show" action mr.Play()
+        on "show" action mr.Play("bgm/%s"%bgm[persistent.bgm_index])
 
 
 screen info:
     tag info
-    add(Frame("backgrounds/%s"%(bg[bg_index])))
+    add(Frame("backgrounds/%s"%(bg[persistent.bg_index])))
     add(im.Scale(data[selected_character]['full_art'], 960*x_ratio, 640*x_ratio)) align(1.3,1.0)
     imagebutton auto "gui/button/back-%s.png" align(0.0, 0.0) action Return(['back', 'index'])
         
@@ -280,7 +290,7 @@ screen info:
                                     textbutton ("No data") align(0.5,0.5) 
 
     if not renpy.music.is_playing():
-        on "show" action mr.Play()
+        on "show" action mr.Play("bgm/%s"%bgm[persistent.bgm_index])
 
 
 screen test:
@@ -305,23 +315,30 @@ screen test:
         on "show" action mr.Play()
 
 
+screen custom_listener:
+    key "K_t" action ToggleField(persistent, "text_enable", True, False)
+    key "K_b" action [ToggleField(persistent, "bg_enable", True, False), Function(change_bg)]
+    key "K_d" action [SetField(persistent, "bg_enable", False if persistent.text_enable else not persistent.bg_enable), 
+                    SetField(persistent, "text_enable", False if persistent.text_enable != persistent.bg_enable else not persistent.text_enable),
+                    Function(change_bg)]
+
 label main_menu:
     return
 
             
 label start:
     scene black
+    show screen custom_listener
     python:
-        data_dmm = dict_from_config_file(os.path.join(config.gamedir, 'dmm/config.ini'))
-        data_nutaku = dict_from_config_file(os.path.join(config.gamedir, 'nutaku/config.ini'))
+        change_bg()
         bg = os.listdir(os.path.join(config.gamedir, 'backgrounds'))
         bgm = os.listdir(os.path.join(config.gamedir, 'bgm'))
-        bgm = bgm[::-1]
-        bg_index = len(bg) - 1
+        persistent.bg_index = persistent.bg_index % len(bg)
+        persistent.bgm_index = persistent.bgm_index % len(bgm)
         x_ratio = config.screen_width / 1280.0
         y_ratio = config.screen_height / 720.0
         
-        mr = MusicRoom(fadeout=1.0)
+        mr = MusicRoom(fadeout=1.0, loop=True, single_track=True)
         for track in bgm:
             mr.add('bgm/%s' % track, always_unlocked=True)
         
@@ -330,8 +347,16 @@ label start:
         selected_platform = ''
         
         chars = dict(story=[],eidolon=[],soul=[],kamihime_R=[],kamihime_SR=[],kamihime_SSR=[],kamihime_unknown=[])
-        chars_nutaku = parse_character_info(data_nutaku, 'nutaku')
-        chars_dmm = parse_character_info(data_dmm, 'dmm')
+        nutaku_exist = False
+        dmm_exist = False
+        if os.path.exists(os.path.join(config.gamedir, 'nutaku')):
+            nutaku_exist = True
+            data_nutaku = dict_from_config_file(os.path.join(config.gamedir, 'nutaku/config.ini'))
+            chars_nutaku = parse_character_info(data_nutaku, 'nutaku')
+        if os.path.exists(os.path.join(config.gamedir, 'dmm')):
+            dmm_exist = True
+            data_dmm = dict_from_config_file(os.path.join(config.gamedir, 'dmm/config.ini'))
+            chars_dmm = parse_character_info(data_dmm, 'dmm')
             
 
 label index:
@@ -448,7 +473,23 @@ screen lightbutton(img,return_value,align = (0.5,0.5)):
         action Return(return_value)
 
 
-init python:      
+init python:
+    def change_bg():
+        if persistent.bg_enable:
+            if style.say_window.background == None:
+                style.say_window.background = Frame("gui/base_talk_window.png", xalign=0.5, yalign=1.0)
+                style.say_dialogue.outlines = [ (absolute(0), "#FFF", absolute(0), absolute(0)) ]
+                style.say_dialogue.color = "#000000"
+                style.say_label.outlines = [ (absolute(0), "#000", absolute(0), absolute(0)) ]
+                style.rebuild()
+        else:
+            if style.say_window.background != None:
+                style.say_window.background = None
+                style.say_dialogue.outlines = [ (absolute(2), "#000", absolute(1), absolute(1)) ]
+                style.say_dialogue.color = "#FFFFFF"
+                style.say_label.outlines = [ (absolute(2), "#000", absolute(1), absolute(1)) ]
+                style.rebuild()
+
     def parse(string):
         try:
             value = int(string)
@@ -480,11 +521,12 @@ init python:
          
             # Load INI file into a dict 
             for section in inifile.sections(): 
-                result[section] = dict() 
-                result[section]['id'] = section
+                char_name = inifile.get(section, 'name', raw, vars)
+                result[char_name] = dict() 
+                result[char_name]['id'] = section
                 for option in inifile.options(section): 
                     v = inifile.get(section, option, raw, vars) 
-                    result[section][option] = parse(v)
+                    result[char_name][option] = parse(v)
         
         return result
 

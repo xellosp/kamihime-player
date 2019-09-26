@@ -51,3 +51,13 @@ game/nutaku/censored.txt
 game/nutaku/eidolons.json
 game/nutaku/config.ini
 game/nutaku/listing*
+desktop.ini
+errors.txt
+log.txt
+traceback.txt
+Rubbish/tmp/lock
+game/dmm/ignore.txt
+game/gui/welcome_to_temptation_red5.png
+game/gui/button/button.psd
+game/nutaku/ignore.txt
+game/nutaku/00_convert_script.py

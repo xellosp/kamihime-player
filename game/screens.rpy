@@ -4,6 +4,8 @@
 
 init offset = -1
 
+default persistent.bg_enable = True
+default persistent.text_enable = True
 
 ################################################################################
 ## Styles
@@ -95,6 +97,7 @@ style frame:
 ##
 ## https://www.renpy.org/doc/html/screen_special.html#say
 
+
 screen say(who, what):
     style_prefix "say"
 
@@ -105,10 +108,15 @@ screen say(who, what):
 
             window:
                 style "namebox"
-                text who id "who"
+                if persistent.text_enable:
+                    text who id "who"
+                else:
+                    text "" id "who"
 
-        text what id "what"
-
+        if persistent.text_enable:
+            text what id "what"
+        else:
+            text "" id "what"
 
     ## If there's a side image, display it above the text. Do not display on the
     ## phone variant - there's no room.
@@ -142,6 +150,9 @@ style namebox:
 
     background Frame("gui/namebox.png", gui.namebox_borders, tile=gui.namebox_tile, xalign=gui.name_xalign)
     padding gui.namebox_borders.padding
+
+style namebox_none:
+    background None
 
 style say_label:
     properties gui.text_properties("name", accent=True)
@@ -741,10 +752,26 @@ screen preferences():
                     label _("Skip")
                     textbutton _("Unseen Text") action Preference("skip", "toggle")
                     textbutton _("After Choices") action Preference("after choices", "toggle")
-                    textbutton _("Transitions") action InvertSelected(Preference("transitions", "toggle"))
+                    textbutton _("Transitions") action InvertSelected(Preference("transitions", "toggle"))                
 
                 ## Additional vboxes of type "radio_pref" or "check_pref" can be
                 ## added here, to add additional creator-defined preferences.
+
+            null height (4 * gui.pref_spacing)
+
+            label _("Dialogue")
+            hbox:
+                vbox: 
+                    style_prefix "radio"
+                    label _("Background")
+                    textbutton _("Disable") action SetField(persistent, 'bg_enable', False)
+                    textbutton _("Enable") action SetField(persistent, 'bg_enable', True)
+
+                vbox:
+                    style_prefix "radio"
+                    label _("Text")
+                    textbutton _("Disable") action SetField(persistent, 'text_enable', False)
+                    textbutton _("Enable") action SetField(persistent, 'text_enable', True)
 
             null height (4 * gui.pref_spacing)
 

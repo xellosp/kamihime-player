@@ -8,6 +8,10 @@ import shutil
 import re
 import urllib3
 import logging
+import ConfigParser
+import threading
+import pickle
+import concurrent.futures as cf
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.basicConfig(
     filename='1_error.log',
@@ -16,15 +20,26 @@ logging.basicConfig(
     format='[%(levelname)s] %(asctime)s: %(message)s'
 )
 
-codes = dict(nutaku={}, dmm={})
-codes['kamihime'] = dict(
-    intro=['94/76/', '76/89/'], scene=['de/59/'], get='76/89/')
-codes['eidolon'] = dict(
-    intro=['9f/51/'], scene=['d7/ad/'], get='9f/51/')
-codes['soul'] = dict(
-    intro=['67/01/', '3b/26/'], scene=['ec/4d/'], get='3b/26/')
-codes['story'] = dict(intro=['44/89/', '4d/fd/', '3d/12/', '81/19/', 'ee/10/',
-                                       '19/b4/'], scene=['92/ec/', '28/8f/', '91/1b/', '01/8d/', 'cc/d4/', '96/15/'])
+# Number of threads to donwload assets
+config = ConfigParser.RawConfigParser()
+config.read('setting.ini')
+thread_num = config.getint('script', 'threads')
+
+# Set request timeout (seconds)
+req_timeout = 120 
+
+ignore_links = []
+retry_links = []
+retry_num = 3
+
+ignore_file = 'ignore.txt'
+
+if os.path.exists(ignore_file):
+    with open(ignore_file, 'r') as f:
+        ignore_links = f.read().splitlines()
+    ignore_links_len = len(ignore_links)
+else:
+    ignore_links_len = 0
 
 base_url = dict(nutaku={}, dmm={})
 
@@ -37,13 +52,39 @@ links = {'': []}
 
 data_directory = 'raw_scenario'
 asset_folder = 'assets'
-# data_directory = 'nutaku/raw_scenario'
-# asset_folder = 'nutaku/assets'
+
+if not os.path.exists(asset_folder):
+    os.mkdir(asset_folder)
 
 headers = {}
 headers['user-agent'] = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
 s = requests.Session()
 
+        
+############################################################################
+# SYNCHRONIZED PRINT FUNCTION
+############################################################################
+def synchronized(func):
+    func.__lock__ = threading.Lock()
+		
+    def synced_func(*args, **kws):
+        with func.__lock__:
+            return func(*args, **kws)
+
+    return synced_func
+
+
+@synchronized
+def print_console(text):
+    try:
+        print text
+    except:
+        pass
+        
+
+############################################################################
+# MAIN FUNCTIONS
+############################################################################
 def download_script(file_path, url):
     r = s.get(url, headers=headers, verify=False)
     if r.status_code == 200:
@@ -52,6 +93,7 @@ def download_script(file_path, url):
         print 'Failed to download script for "%s"' % file_path
         sys.exit()
 
+
 def write_to_file(file_path, data):
     try:
         with open(file_path, 'w') as f:
@@ -59,6 +101,7 @@ def write_to_file(file_path, data):
     except:
         print 'Failed to convert file "%s"' % file_path
         sys.exit()
+
 
 def download_scenario_script(file_path, data):
     url = base_url['scenarios'] + data['scenario_path']
@@ -80,20 +123,56 @@ def download_hscene_script(file_path, data):
     return data
 
 
+def download_asset(link, resource_directory):
+    link = link.replace(' ', '')
+    folder = os.path.join(asset_folder, resource_directory)
+    dst = os.path.join(folder, link[link.rfind('/')+1:]).replace('_pc_h', '')
+
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
+    if not os.path.exists(dst):
+        if "black.jpg" in link:
+            shutil.copyfile("black.jpg", dst)
+        else:
+            if link in ignore_links:
+                print_console('Ignore %s' % link)
+                return
+
+            try:
+                r = s.get(link, headers=headers, verify=False, timeout=req_timeout)
+                if r.status_code == 200 and not r.text.startswith('<html>'):
+                    print_console('Saved %s' % link)
+                    with open(dst, 'wb') as f:
+                        for chunk in r:
+                            f.write(chunk)
+                else:
+                    print_console('Error: %s' % link)
+                    logging.error("%s (%s)" % (link, r.status_code))
+
+                    if r.status_code == 404:
+                        ignore_links.append(link)
+            except requests.exceptions.RequestException as e:
+                retry_links.append(link, resource_directory)
+                logging.error("%s: %s" % (link, e))
+    else:
+        print_console('%s already exists' % dst)
+
+
 character_types = os.listdir(data_directory)
 for character_type in character_types:
-    lst = os.listdir(os.path.join(data_directory, character_type))
+    lst = os.listdir(os.path.join(data_directory, character_type).decode('utf8'))
     for character in lst:
         scenarios = os.listdir(os.path.join(data_directory, character_type, character))
         for filename in scenarios:
-            print character, filename
+            print_console(character + " " + filename)
             file_path = os.path.join(data_directory, character_type, character, filename)
             with open(file_path) as file:
                 data = json.load(file)
 
             type = character_type.split('_')[0]
 
-            if data.has_key('summary'):
+            if data['scenario_path'].endswith('.ks'):
                 if not data.has_key('scenario'):
                     print 'Convert script file...'
                     data = download_scenario_script(file_path, data)
@@ -103,56 +182,42 @@ for character_type in character_types:
                 if not links.has_key(resource_directory):
                     links[resource_directory] = []
 
-                if data.has_key('scenario_path'):
-                    resource_codes = ['/'.join(data['scenario_path'].split('/')[:2]) + '/']
-                else:
-                    resource_codes = codes[type]['intro']
-
+                resource_code = '/'.join(data['scenario_path'].split('/')[:2]) + '/'
                 data = data['scenario'].replace('\r', '').split('\n')
+
                 for entry in data:
                     if entry.startswith('*') or entry.startswith('#') or entry.startswith('Tap to continue'):
                         continue
                     if entry.startswith('['):
-                        entry = entry.replace('[', '').replace(
-                            ']', '').replace('"', '').split()
+                        entry = entry.replace('[', '').replace(']', '').replace('"', '').split()
+
                         if len(entry) < 2:
                             continue
-                        # print entry
+
                         line = dict(cmd=entry[0])
                         for record in entry[1:]:
                             cmd = record.split('=')
                             if len(cmd) == 2:
                                 line[cmd[0]] = cmd[1]
-                        # print line
 
                         link = ''
                         if line['cmd'].startswith('chara_new') or line['cmd'].startswith('chara_face'):
                             link = base_url['fgimage'] + line['storage']
-                            links[''].append((line['storage'], [link]))
+                            links[''].append(link)
                         elif line['cmd'].startswith('playbgm'):
                             link = base_url['bgm'] + line['storage']
-                            links[''].append((line['storage'], [link]))
+                            links[''].append(link)
                         elif line['cmd'].startswith('bg'):
-                            hd_link = re.sub(
-                                r"(.*)(-.*)", r"\1_pc_h\2", line['storage'])
+                            hd_link = re.sub(r"(.*)(-.*)", r"\1_pc_h\2", line['storage'])
                             link = base_url['bg'] + hd_link
-                            links[''].append((line['storage'], [link]))
+                            links[''].append(link)
 
                         # print type
-                        link = []
                         if line['cmd'].startswith('playse'):
                             # print line['storage']
                             if line['storage'].startswith('h_intro') or line['storage'].startswith('h_get') or line['storage'].startswith('h_main') or line['storage'].startswith('se'):
-                                for code in resource_codes:
-                                    sub_link = base_url['scenarios']
-                                    sub_link += code
-                                    sub_link += resource_directory + \
-                                        '/sound/' + line['storage']
-                                    link.append(sub_link)
-
-                            if len(link):
-                                links[resource_directory].append(
-                                    (line['storage'], link))
+                                link = base_url['scenarios'] + resource_code + resource_directory + '/sound/' + line['storage']
+                                links[resource_directory].append(link)
 
             else:
                 if not data.has_key('scene_data'):
@@ -163,67 +228,46 @@ for character_type in character_types:
                 if not links.has_key(resource_directory):
                     links[resource_directory] = []
 
-                if data.has_key('scenario_path'):
-                    resource_codes = ['/'.join(data['scenario_path'].split('/')[:2]) + '/']
-                else:
-                    resource_codes = codes[type]['scene']
+                resource_code = '/'.join(data['scenario_path'].split('/')[:2]) + '/'
                 
                 for entry in data['scene_data']:
                     if entry.has_key('bgm'):
-                        link = []
-                        for code in resource_codes:
-                            sub_link = base_url['scenarios']
-                            sub_link += code + resource_directory + \
-                                '/' + entry['bgm']
-                            link.append(sub_link)
-                        links[resource_directory].append((entry['bgm'], link))
+                        link = base_url['scenarios'] + resource_code + resource_directory + '/' + entry['bgm']
+                        links[resource_directory].append(link)
 
                     if entry.has_key('film'):
-                        link = []
-                        for code in resource_codes:
-                            sub_link = base_url['scenarios']
-                            sub_link += code + resource_directory + \
-                                '/' + entry['film']
-                            link.append(sub_link)
-                        links[resource_directory].append((entry['film'], link))
+                        link = base_url['scenarios'] + resource_code + resource_directory + '/' + entry['film']
+                        links[resource_directory].append(link)
 
                     for line in entry['talk']:
                         if line.has_key('voice'):
-                            link = []
-                            for code in resource_codes:
-                                sub_link = base_url['scenarios']
-                                sub_link += code + resource_directory + \
-                                    '/' + line['voice']
-                                link.append(sub_link)
-                            links[resource_directory].append((line['voice'], link))
+                            link = base_url['scenarios'] + resource_code + resource_directory + '/' + line['voice']
+                            links[resource_directory].append(link)
 
 
 for resource_directory in links:
-    for link in links[resource_directory]:
-        folder = os.path.join(asset_folder, resource_directory)
-        dst = os.path.join(folder, link[0])
+    with cf.ThreadPoolExecutor(max_workers=thread_num) as executor:
+        futures = [executor.submit(lambda p: download_asset(*p), (link, resource_directory)) for link in links[resource_directory]]
 
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+        for _ in cf.as_completed(futures):
+            pass
 
-        if not os.path.exists(dst):
+# Retry error links
+while retry_num > 0 and retry_links:
+    print_console('Retrying error links...')
+    tmp_links = retry_links
+    retry_links = []
 
-            print "Saving", link
-            if "black.jpg" in link:
-                shutil.copyfile("black.jpg", dst)
-            else:
-                success = False
-                for url in link[1]:
-                    r = s.get(url, headers=headers, verify=False)
-                    if r.status_code == 200 and not r.text.startswith('<html>'):
-                        success = True
-                        break
-                if success:
-                    with open(dst, 'wb') as f:
-                        for chunk in r:
-                            f.write(chunk)
-                else:
-                    print "Error"
-                    logging.error(link[1])
-        else:
-            print dst, 'already exists'
+    with cf.ThreadPoolExecutor(max_workers=thread_num) as executor:
+        futures = [executor.submit(lambda p: download_asset(*p), (retry_link[0], retry_link[1])) for retry_link in tmp_links]
+
+        for _ in cf.as_completed(futures):
+            pass
+
+    retry_num = retry_num - 1
+
+if len(ignore_links) != ignore_links_len:
+    # Write new ignore links to file
+    with open(ignore_file, 'a') as f:
+        for link in ignore_links[ignore_links_len:]:
+            f.write(link + '\n')

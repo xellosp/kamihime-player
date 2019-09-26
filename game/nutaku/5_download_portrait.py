@@ -12,6 +12,8 @@ logging.basicConfig(
     format='[%(levelname)s] %(asctime)s: %(message)s'
 )
 
+# img_folder = 'nutaku/portrait'
+# config_file = 'nutaku/config.ini'
 img_folder = 'portrait'
 config_file = 'config.ini'
 
@@ -37,15 +39,13 @@ for section in config.sections():
         print '%s.png already exists' % char_name
         continue
 
-    char_np = char_name.replace(' ', '').replace('\'', '&#039;')\
-        .replace('MengHuo(Mii)', 'MengHuo')\
-        .replace('Masamune', 'Masamune(Soul)')\
-        .replace('Olivier', 'Oliver')\
+    char_np = char_name.replace('\'', '&#039;')\
+        .replace('Masamune', 'Masamune(Soul)')
 
     try:
-        url = (dom_kamihime.find('img', {'alt': '%sPortrait' % char_np, 'width': '75'}) or
-               dom_eidolon.find('img', {'alt': '%sPortrait' % char_np, 'width': '75'}) or
-               dom_soul.find('img', {'alt': '%sPortrait' % char_np, 'width': '75'}))['data-src']
+        url = (dom_kamihime.find('img', {'alt': '%s Portrait' % char_np, 'width': '75'}) or
+               dom_eidolon.find('img', {'alt': '%s Portrait' % char_np, 'width': '75'}) or
+               dom_soul.find('img', {'alt': '%s Portrait' % char_np, 'width': '75'}))['data-src']
     except:
         print 'Can not find character %s' % char_np
         logging.error('Can not find character %s' % char_np)

@@ -6,10 +6,13 @@
 ## init code in any other file.
 init offset = -2
 
+default persistent.default_width = 1080
+default persistent.default_height = 720
+
 ## Calling gui.init resets the styles to sensible default values, and sets the
 ## width and height of the game.
 init python:
-    gui.init(1080, 720)
+    gui.init(persistent.default_width, persistent.default_height)
 
 
 ################################################################################

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import os
 import sys
@@ -15,7 +16,8 @@ parser = UnicodeConfigParser()
 
 info = dict(kamihime={}, eidolon={}, soul={}, story={})
 eid_mapper = {46: 6001, 223: 6002, 15: 6003, 24: 6004, 33: 6005, 8: 6006, 48: 6007,
-              259: 6008, 239: 6009, 37: 5001, 32: 5002, 10: 5003, 28: 5004, 14: 5005, 9051: 6020}
+              259: 6008, 239: 6009, 37: 5001, 32: 5002, 10: 5003, 28: 5004, 14: 5005, 9051: 6020,
+              5020: 6056, 6056: 5020}
 kh_mapper = {4: 5001, 14: 5002, 41: 5003, 9: 5004, 91: 5005, 8: 5006, 15: 5007, 25: 5008, 112: 5009, 57: 5010,
              22: 6001, 97: 6002, 72: 6003, 95: 6004, 80: 6005, 29: 6006, 58: 6007, 62: 6008, 23: 6009, 113: 6010, 60: 6011, 107: 6012,
              96: 7001, 98: 7002, 99: 7003, 81: 7004, 100: 7005, 85: 7006, 93: 7007, 114: 7008, 102: 7009}
@@ -100,12 +102,11 @@ for entry in lst:
     # print entry
     with open(os.path.join(eid_info_folder, entry)) as file:
         data = json.load(file)
-        if data['has_harem'] == True:
-            id = data['summon_id']
-            info['eidolon'][id] = dict()
-            info['eidolon'][id]['description'] = data['description']
-            info['eidolon'][id]['name'] = data['name']
-            info['eidolon'][id]['rare'] = data['rare']
+        id = data['summon_id']
+        info['eidolon'][id] = dict()
+        info['eidolon'][id]['description'] = data['description']
+        info['eidolon'][id]['name'] = data['name']
+        info['eidolon'][id]['rare'] = data['rare']
 
 lst = os.listdir(kh_info_folder)
 for entry in lst:
@@ -123,11 +124,10 @@ for character in lst:
     # print entry
     with open(os.path.join(soul_info_folder, character)) as file:
         data = json.load(file)
-        for record in data['data']:
-            id = record['job_id']
-            info['soul'][id] = dict()
-            info['soul'][id]['description'] = record['description']
-            info['soul'][id]['name'] = record['name']
+        id = data['job_id']
+        info['soul'][id] = dict()
+        info['soul'][id]['description'] = data['description']
+        info['soul'][id]['name'] = data['name']
 
 lst = os.listdir(main_quest_info_folder)
 for character in lst:
@@ -140,10 +140,12 @@ for character in lst:
             info['story'][id] = dict()
             info['story'][id]['description'] = record['description']
 
+logging.info(info)
 for type in os.listdir(data_folder):
-    for entry in os.listdir(os.path.join(data_folder, type)):
-        print entry
-
+    for entry in os.listdir(os.path.join(data_folder, type).decode('utf8')):
+        #logging.info(entry)
+        log_console(entry)
+        #m = [u for u in info['eidolon'] if info['eidolon'][u]['name'] == u'マルコシアス']
         scenarios = os.listdir(os.path.join(data_folder, type, entry))
         stories = [scenario for scenario in scenarios if scenario.endswith('_script.ks')]
         hcenes = [scenario for scenario in scenarios if scenario.endswith('_script.json')]
@@ -166,6 +168,7 @@ for type in os.listdir(data_folder):
             sys.exit()
 
         for scenario in scenarios:
+            #logging.info(scenario)
             with open(os.path.join(data_folder, type, entry, scenario)) as file:
                 data = json.load(file)
 
@@ -196,6 +199,7 @@ for type in os.listdir(data_folder):
             parser.set(section_name, 'scene_%d' % scene_index, label)
 
         if chara_info is not None:
+            #logging.info(chara_info)
             if story_type == 'story':
                 parser.set(section_name, 'name', section_name)
             else:
@@ -206,9 +210,11 @@ for type in os.listdir(data_folder):
             else:
                 parser.set(section_name, 'type', story_type)
             parser.set(section_name, 'description', chara_info['description'])
-
         else:
-            parser.set(section_name, 'name', name.replace('[', '(').replace(']', ')'))
+            if story_type == 'story':
+                parser.set(section_name, 'name', section_name)
+            else:
+                parser.set(section_name, 'name', name.replace('[', '(').replace(']', ')'))
             parser.set(section_name, 'type', type)
 
 info.pop('story')

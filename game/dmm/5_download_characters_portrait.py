@@ -50,18 +50,25 @@ img_links.update(get_img_urls(u'http://xn--hckqz0e9cygq471ahu9b.xn--wiki-4i9hs14
 img_links.update(get_img_urls(u'http://xn--hckqz0e9cygq471ahu9b.xn--wiki-4i9hs14f.com/index.php?SSR幻獣'))
 img_links.update(get_img_urls(u'http://xn--hckqz0e9cygq471ahu9b.xn--wiki-4i9hs14f.com/index.php?SR幻獣'))
 img_links.update(get_img_urls(u'http://xn--hckqz0e9cygq471ahu9b.xn--wiki-4i9hs14f.com/index.php?英霊性能一覧', True))
+img_links_awakened = dict(get_img_urls(u'http://xn--hckqz0e9cygq471ahu9b.xn--wiki-4i9hs14f.com/index.php?神化覚醒'))
 
 config = ConfigParser.RawConfigParser()
 config.read(config_file)
 
 for section in config.sections():
+    if section.startswith('story'):
+        continue
+        
     char_name = config.get(section, 'name').decode('utf-8')
     if os.path.exists(os.path.join(img_folder, '%s.png' % char_name)):
         log_console('%s.png already exists' % char_name)
         continue
 
     try:
-        url = img_links[char_name.replace(u'(', u'［').replace(u')', u'］').replace(u'［神化覚醒］', '').replace(u'黄龍', u'黄竜')]
+        if u'神化覚醒' in char_name:
+            url = img_links_awakened[char_name.replace(u'(', u'［').replace(u')', u'］').replace(u'［神化覚醒］', '').replace(u'黄龍', u'黄竜')]
+        else:
+            url = img_links[char_name.replace(u'(', u'［').replace(u')', u'］').replace(u'黄龍', u'黄竜')]
     except:
         log_console('Can not find character %s' % char_name)
         logging.error('Can not find character %s' % char_name)

@@ -24,8 +24,19 @@ asset_folder = 'assets'
 if not os.path.exists(dst_folder):
     os.mkdir(dst_folder)
 
-print u'キャラの名前: ',
+try:
+    print u'キャラの名前: ',
+except:
+    print 'Player name: ',
 player_name = raw_input().decode(sys.stdin.encoding).strip()
+
+
+def log_console(text):
+    try:
+        print text
+    except:
+        None
+        
 
 def cmd(line):
     return '    ' + line
@@ -165,8 +176,8 @@ def parse_scenario(data, script, rd):
 
 # ---------------------------------------Start-------------------------------------------
 for type in os.listdir(data_directory):
-    for character in os.listdir(os.path.join(data_directory, type)):
-        print character
+    for character in os.listdir(os.path.join(data_directory, type).decode('utf8')):
+        log_console(character)
 
         scenarios = os.listdir(os.path.join(data_directory, type, character))
 

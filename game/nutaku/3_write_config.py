@@ -15,7 +15,8 @@ parser = UnicodeConfigParser()
 
 info = dict(kamihime={}, eidolon={}, soul={}, story={})
 eid_mapper = {46: 6001, 223: 6002, 15: 6003, 24: 6004, 33: 6005, 8: 6006, 48: 6007,
-              259: 6008, 239: 6009, 37: 5001, 32: 5002, 10: 5003, 28: 5004, 14: 5005, 9051: 6020}
+              259: 6008, 239: 6009, 37: 5001, 32: 5002, 10: 5003, 28: 5004, 14: 5005, 9051: 6020,
+              6056: 5020, 5020: 6056}
 kh_mapper = {4: 5001, 14: 5002, 41: 5003, 9: 5004, 91: 5005, 8: 5006, 15: 5007, 25: 5008, 112: 5009, 57: 5010,
              22: 6001, 97: 6002, 72: 6003, 95: 6004, 80: 6005, 29: 6006, 58: 6007, 62: 6008, 23: 6009, 113: 6010, 60: 6011, 107: 6012,
              96: 7001, 98: 7002, 99: 7003, 81: 7004, 100: 7005, 85: 7006, 93: 7007, 114: 7008, 102: 7009}
@@ -61,12 +62,11 @@ for character in lst:
     # print entry
     with open(os.path.join(eid_info_folder, character)) as file:
         data = json.load(file)
-        if data['has_harem'] == True:
-            id = data['summon_id']
-            info['eidolon'][id] = dict()
-            info['eidolon'][id]['description'] = data['description']
-            info['eidolon'][id]['name'] = data['name']
-            info['eidolon'][id]['rare'] = data['rare']
+        id = data['summon_id']
+        info['eidolon'][id] = dict()
+        info['eidolon'][id]['description'] = data['description']
+        info['eidolon'][id]['name'] = data['name']
+        info['eidolon'][id]['rare'] = data['rare']
 
 lst = os.listdir(kh_info_folder)
 for character in lst:
@@ -84,11 +84,10 @@ for character in lst:
     # print entry
     with open(os.path.join(soul_info_folder, character)) as file:
         data = json.load(file)
-        for record in data['data']:
-            id = record['job_id']
-            info['soul'][id] = dict()
-            info['soul'][id]['description'] = record['description']
-            info['soul'][id]['name'] = record['name']
+        id = data['job_id']
+        info['soul'][id] = dict()
+        info['soul'][id]['description'] = data['description']
+        info['soul'][id]['name'] = data['name']
 
 lst = os.listdir(main_quest_info_folder)
 for character in lst:

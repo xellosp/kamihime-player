@@ -28,6 +28,12 @@ main_quest_info_folder = 'main_quests'
 config_file = 'config.ini'
 data_folder = 'raw_scenario'
 
+def print_console(text):
+    try:
+        print text
+    except:
+        pass
+
 def get_character_info(entry, scenario, type):
     with open(os.path.join(data_folder, type, entry, scenario)) as file:
         story_type = type.split('_')[0]
@@ -102,8 +108,8 @@ for character in lst:
 
 
 for type in os.listdir(data_folder):
-    for character in os.listdir(os.path.join(data_folder, type)):
-        print character
+    for character in os.listdir(os.path.join(data_folder, type).decode('utf8').decode('utf8')):
+        print_console(character)
 
         scenarios = os.listdir(os.path.join(data_folder, type, character))
         scenarios.sort(key=lambda id: int(id.split('_')[0]))

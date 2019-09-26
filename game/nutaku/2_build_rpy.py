@@ -17,6 +17,11 @@ asset_folder = 'assets'
 def cmd(line):
     return '    '+line
 
+def print_console(text):
+    try:
+        print text
+    except:
+        pass
 
 def exists_in_assets(file):
     file_path = os.path.join(asset_folder, file)
@@ -60,9 +65,9 @@ character_types = os.listdir(data_directory)
 dmm_scenarios = []
 
 for character_type in character_types:
-    lst = os.listdir(os.path.join(data_directory, character_type))
+    lst = os.listdir(os.path.join(data_directory, character_type).decode('utf8'))
     for character in lst:
-        print character
+        print_console(character)
 
         scenarios = os.listdir(os.path.join(data_directory, character_type, character))
 

@@ -62,11 +62,11 @@ if not os.path.exists(khssr_scenario):
     os.mkdir(khssr_scenario)
 
 episodes = dict()
-souls = os.listdir(soul_scenario)
-eidolons = os.listdir(eid_scenario)
-kamihime_Rs = os.listdir(khr_scenario)
-kamihime_SRs = os.listdir(khsr_scenario)
-kamihime_SSRs = os.listdir(khssr_scenario)
+souls = os.listdir(soul_scenario.decode('utf8'))
+eidolons = os.listdir(eid_scenario.decode('utf8'))
+kamihime_Rs = os.listdir(khr_scenario.decode('utf8'))
+kamihime_SRs = os.listdir(khsr_scenario.decode('utf8'))
+kamihime_SSRs = os.listdir(khssr_scenario.decode('utf8'))
 
 for soul in souls:
     eps = [e.replace('.json', '') for e in os.listdir(os.path.join(data_directory, "soul", soul))]
@@ -542,7 +542,7 @@ with cf.ThreadPoolExecutor(max_workers=thread_num) as executor:
 eid_list = set(os.listdir(eid_info_folder))
 eid_ids = []
 print_console('Download eidolon info...')
-for idx in ((0, 1), (0.011, 35), (2, 10), (5, 50), (6, 200), (9.05, 10), (9.2, 20)):
+for idx in ((0, 1), (0.011, 35), (0.216, 6), (2, 10), (5, 50), (6, 200), (9.05, 10), (9.2, 20)):
     x = idx[0]
     for y in xrange(idx[1]):
         eid_ids.append(str(int(x*1000 + y + 1)))
